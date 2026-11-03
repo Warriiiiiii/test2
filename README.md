@@ -13,12 +13,20 @@ npm test           # engine tests (Vitest)
 npm run build      # production build in dist/
 ```
 
+## What works right now
+
+Milestone 2: the combat screen. Title → choose an element → floor 1 → three fights in a row
+against enemies drawn from the Qi Condensation pool. HP carries between fights, Qi refills each fight.
+Clearing the floor lets you rest and climb floor 1 again; dying counts a death and sends you back
+to the awakening. Rewards, higher floors, saving and cultivation arrive in the next milestones.
+
 ## Layout
 
 ```
 src/data/     every balance number and all player-facing text
 src/engine/   pure game logic (combat, rng, statuses) — no React, fully tested
-src/ui/       React screens (from milestone 2)
+src/store/    Zustand store wiring the engine to the screens
+src/ui/       React screens and components
 tests/        Vitest tests for the engine
 ```
 
