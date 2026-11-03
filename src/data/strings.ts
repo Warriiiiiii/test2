@@ -5,7 +5,7 @@ export const STRINGS = {
   title: 'Ninefold Pagoda',
   tagline: 'Die. Remember. Climb again.',
 
-  tabs: { cultivate: 'Cultivate', pagoda: 'Pagoda', techniques: 'Techniques', laws: 'Laws', soul: 'Soul' },
+  tabs: { cultivate: 'Cultivate', world: 'World', techniques: 'Techniques', laws: 'Laws', soul: 'Soul' },
 
   elements: {
     fire: 'Fire', water: 'Water', metal: 'Metal', wood: 'Wood', earth: 'Earth', none: 'None',
@@ -86,6 +86,61 @@ export const STRINGS = {
     backToTitle: 'Back',
     rewindUsed: 'Rewind spent',
   },
+
+  world: {
+    title: 'World',
+    sealed: 'Sealed',
+    cleared: 'Cleared',
+    here: 'You are here',
+    progress: (wins: number, needed: number) => `${wins} / ${needed} wins`,
+    boss: 'Boss',
+    bossBeaten: 'Boss defeated',
+    enter: 'Enter',
+    home: 'Home',
+  },
+
+  hud: {
+    leave: 'Leave',
+    wins: (wins: number, needed: number) => `${wins}/${needed}`,
+    hubHint: 'Walk onto the mat to meditate, or through the gate to climb.',
+    gateSealed: 'The boss gate is sealed. Clear the floor and reach your realm peak.',
+    gateOpen: 'The boss gate stands open.',
+    tapToMove: 'Tap a tile to walk. Touch a monster to fight.',
+  },
+
+  techniques: {
+    title: 'Techniques',
+    equipped: (n: number, max: number) => `Equipped ${n} / ${max}`,
+    learned: 'Learned',
+    hint: 'Tap a technique to equip or unequip it.',
+    emptySlot: 'Empty',
+    equippedTag: 'Equipped',
+  },
+
+  cultivate: {
+    title: 'Cultivate',
+    meditate: 'Meditate',
+    hint: 'Sit, breathe, and let the wounds close.',
+    healed: 'Your HP is restored.',
+    asleep: 'The qi in your meridians has not awakened yet.',
+  },
+
+  lawsTab: { title: 'Laws', asleep: 'Your comprehension is still asleep.' },
+  soulTab: { title: 'Soul', asleep: 'Your soul has nothing to remember yet.' },
+
+  reward: {
+    title: 'Choose a reward',
+    spiritHerb: 'Spirit Herb',
+    spiritHerbDesc: (stat: string, amount: number) => `+${amount} ${stat}`,
+    cultivationHerb: 'Cultivation Herb',
+    cultivationHerbDesc: (percent: number, minutes: number) => `+${percent}% cultivation for ${minutes} min`,
+    scroll: 'Technique Scroll',
+    scrollDesc: (name: string) => `Learn ${name}`,
+    pill: 'Healing Pill',
+    pillDesc: (percent: number) => `Heal ${percent}% HP`,
+  },
+
+  credits: 'Art and music: Ninja Adventure Asset Pack by Pixel-boy and AAA (CC0)',
 
   /** Short player-facing descriptions of move effects. */
   effects: {

@@ -1,13 +1,15 @@
 import { useEffect, useRef, useState } from 'react';
 import type { Side } from '../../engine/types';
 import { getEnemyIntent, playerMoves, turnOrder } from '../../engine/combat';
+import { findArea, progressOf } from '../../engine/area';
 import { STRINGS } from '../../data/strings';
+import { ENEMY_SPRITES, PLAYER_SPRITE } from '../../data/sprites';
 import { canRewind, useGameStore } from '../../store/gameStore';
 import Bar from '../components/Bar';
 import CombatLog from '../components/CombatLog';
 import ElementBadge from '../components/ElementBadge';
-import InkFigure from '../components/InkFigure';
 import MoveIcon from '../components/MoveIcon';
+import SpriteFrame from '../components/SpriteFrame';
 import StatusChips from '../components/StatusChips';
 import { describeMove, moveCategory, qiCostLabel } from '../format';
 
@@ -20,11 +22,14 @@ interface Floater {
 }
 
 const FLOAT_MS = 1000;
+const DEFAULT_ENEMY_SCALE = 5;
+const PLAYER_SCALE = 4;
 
-/** The fight. Enemy on top, log in the middle, player bars and actions at the bottom. */
+/** The fight, drawn over the paused map. Enemy on top, log in the middle, player and actions at the bottom. */
 export default function CombatScreen() {
   const combat = useGameStore((s) => s.combat);
   const run = useGameStore((s) => s.run);
+  const encounter = useGameStore((s) => s.encounter);
   const act = useGameStore((s) => s.act);
   const rewind = useGameStore((s) => s.rewind);
   const rewindUsed = useGameStore((s) => s.rewindUsed);
@@ -56,104 +61,123 @@ export default function CombatScreen() {
     return () => clearTimeout(timer);
   }, [combat, logLength]);
 
-  if (!combat || !run) return null;
+  if (!combat || !run || !encounter) return null;
 
   const { player, enemy } = combat;
+  const area = findArea(encounter.areaId);
+  const progress = progressOf(run, area.id);
   const intent = getEnemyIntent(combat, { hasMemory: false });
   const enemyFirst = turnOrder(combat)[0] === 'enemy';
   const over = combat.result !== 'ongoing';
   const showRewind = (run.lawLevels.time ?? 0) >= 6;
   const rewindable = canRewind({ combat, previousCombat, rewindUsed, run });
-  const hitSide = (side: Side) => (floaters.some((f) => f.side === side && f.kind !== 'heal') ? 'hit' : '');
+  const hitNow = (side: Side) => floaters.some((f) => f.side === side && f.kind !== 'heal' && f.kind !== 'miss');
+  const enemySprite = ENEMY_SPRITES[enemy.def.id];
 
   return (
-    <main className="screen combat-screen">
-      <header className="combat-header muted">
-        <span>{STRINGS.ui.floor(run.floor)} · {STRINGS.ui.fight(run.fightIndex + 1, run.floorEnemies.length)}</span>
-        <span>{STRINGS.ui.turn(combat.turn)}</span>
-      </header>
+    <div className="overlay combat-overlay">
+      <main className="combat-inner">
+        <header className="combat-header muted">
+          <span>
+            {area.name}
+            {area.kind === 'field' && ` · ${STRINGS.hud.wins(Math.min(progress.wins, area.winsToClear), area.winsToClear)}`}
+          </span>
+          <span>{STRINGS.ui.turn(combat.turn)}</span>
+        </header>
 
-      <section className={`panel enemy-panel ${hitSide('enemy')}`} aria-label={enemy.name}>
-        <div className="enemy-figure">
-          <InkFigure element={enemy.element} vigor={enemy.hp / enemy.maxHp} />
-          <Floaters list={floaters.filter((f) => f.side === 'enemy')} />
-        </div>
-        <div className="enemy-info">
-          <h2 className="display">
-            {enemy.name} <ElementBadge element={enemy.element} />
-          </h2>
-          <Bar kind="hp" value={enemy.hp} max={enemy.maxHp} label={STRINGS.stats.vitality} />
-          <div className="intent">
-            <span className="muted">{STRINGS.ui.intent}:</span>{' '}
-            {intent.known && intent.moves[0] ? (
-              <span className="intent-move">
-                <MoveIcon category={moveCategory(intent.moves[0])} size={16} /> {intent.moves[0].name}
-              </span>
-            ) : intent.telegraphed ? (
-              <span className="intent-move intent-telegraph">
-                <MoveIcon category={moveCategory(intent.telegraphed.move)} size={16} />{' '}
-                {STRINGS.ui.telegraph(intent.telegraphed.move.name, intent.telegraphed.inTurns)}
-              </span>
-            ) : (
-              <span className="intent-unknown">{STRINGS.combat.unknownIntent}</span>
+        <section className={`panel enemy-panel${hitNow('enemy') ? ' hit' : ''}`} aria-label={enemy.name}>
+          <div className="enemy-figure">
+            {enemySprite && (
+              <SpriteFrame
+                def={enemySprite}
+                anim="idle"
+                scale={enemySprite.combatScale ?? DEFAULT_ENEMY_SCALE}
+                className={`${hitNow('enemy') ? 'sprite-hit' : ''} ${combat.result === 'won' ? 'sprite-dead' : ''}`}
+              />
             )}
-            {enemyFirst && !over && <span className="chip chip-warn">{STRINGS.ui.enemyFaster}</span>}
+            <Floaters list={floaters.filter((f) => f.side === 'enemy')} />
           </div>
-          <StatusChips statuses={enemy.statuses} turn={combat.turn} />
-        </div>
-      </section>
+          <div className="enemy-info">
+            <h2 className="display">
+              {enemy.name} <ElementBadge element={enemy.element} />
+            </h2>
+            <Bar kind="hp" value={enemy.hp} max={enemy.maxHp} label={STRINGS.stats.vitality} />
+            <div className="intent">
+              <span className="muted">{STRINGS.ui.intent}:</span>{' '}
+              {intent.known && intent.moves[0] ? (
+                <span className="intent-move">
+                  <MoveIcon category={moveCategory(intent.moves[0])} size={16} /> {intent.moves[0].name}
+                </span>
+              ) : intent.telegraphed ? (
+                <span className="intent-move intent-telegraph">
+                  <MoveIcon category={moveCategory(intent.telegraphed.move)} size={16} />{' '}
+                  {STRINGS.ui.telegraph(intent.telegraphed.move.name, intent.telegraphed.inTurns)}
+                </span>
+              ) : (
+                <span className="intent-unknown">{STRINGS.combat.unknownIntent}</span>
+              )}
+              {enemyFirst && !over && <span className="chip chip-warn">{STRINGS.ui.enemyFaster}</span>}
+            </div>
+            <StatusChips statuses={enemy.statuses} turn={combat.turn} />
+          </div>
+        </section>
 
-      <CombatLog entries={combat.log} placeholder={STRINGS.log.appears(enemy.name)} />
+        <CombatLog entries={combat.log} placeholder={STRINGS.log.appears(enemy.name)} />
 
-      <section className={`panel player-panel ${hitSide('player')}`} aria-label={STRINGS.ui.you}>
-        <Floaters list={floaters.filter((f) => f.side === 'player')} />
-        <div className="row player-title">
-          <ElementBadge element={player.element} withName />
-          <StatusChips statuses={player.statuses} turn={combat.turn} />
-        </div>
-        <Bar kind="hp" value={player.hp} max={player.maxHp} label={STRINGS.stats.vitality} />
-        <Bar kind="qi" value={player.qi} max={player.maxQi} label={STRINGS.stats.qi} />
+        <section className={`panel player-panel${hitNow('player') ? ' hit' : ''}`} aria-label={STRINGS.ui.you}>
+          <Floaters list={floaters.filter((f) => f.side === 'player')} />
+          <div className="row player-title">
+            <span className="player-figure">
+              <SpriteFrame
+                def={PLAYER_SPRITE}
+                anim="idleUp"
+                scale={PLAYER_SCALE}
+                className={`${hitNow('player') ? 'sprite-hit' : ''} ${combat.result === 'lost' ? 'sprite-dead' : ''}`}
+              />
+              <ElementBadge element={player.element} withName />
+            </span>
+            <StatusChips statuses={player.statuses} turn={combat.turn} />
+          </div>
+          <Bar kind="hp" value={player.hp} max={player.maxHp} label={STRINGS.stats.vitality} />
+          <Bar kind="qi" value={player.qi} max={player.maxQi} label={STRINGS.stats.qi} />
 
-        <div className="actions">
-          {playerMoves(combat).map((move) => {
-            const affordable = player.qi >= move.qiCost;
-            const element = move.element && move.element !== 'none' ? move.element : undefined;
-            return (
-              <button
-                key={move.id}
-                className={`btn action${element ? ` action-${element}` : ''}`}
-                disabled={over || !affordable}
-                onClick={() => act(move.id)}
-                title={describeMove(move).join(' · ')}
-              >
-                <MoveIcon category={moveCategory(move)} />
-                <span className="action-name">{move.name}</span>
-                <small className="action-meta">{[qiCostLabel(move), ...describeMove(move)].join(' · ')}</small>
-              </button>
-            );
-          })}
-        </div>
+          <div className="actions">
+            {playerMoves(combat).map((move) => {
+              const affordable = player.qi >= move.qiCost;
+              const element = move.element && move.element !== 'none' ? move.element : undefined;
+              return (
+                <button
+                  key={move.id}
+                  className={`btn action${element ? ` action-${element}` : ''}`}
+                  disabled={over || !affordable}
+                  onClick={() => act(move.id)}
+                  title={describeMove(move).join(' · ')}
+                >
+                  <MoveIcon category={moveCategory(move)} />
+                  <span className="action-name">{move.name}</span>
+                  <small className="action-meta">{[qiCostLabel(move), ...describeMove(move)].join(' · ')}</small>
+                </button>
+              );
+            })}
+          </div>
 
-        {showRewind && (
-          <button className="btn btn-ghost btn-wide" disabled={!rewindable} onClick={rewind}>
-            {rewindUsed ? STRINGS.ui.rewindUsed : STRINGS.combat.rewind}
-          </button>
-        )}
-      </section>
+          {showRewind && (
+            <button className="btn btn-ghost btn-wide" disabled={!rewindable} onClick={rewind}>
+              {rewindUsed ? STRINGS.ui.rewindUsed : STRINGS.combat.rewind}
+            </button>
+          )}
+        </section>
+      </main>
 
       {over && (
-        <div className={`overlay overlay-${combat.result}`} role="dialog" aria-modal="true">
+        <div className={`overlay result-overlay overlay-${combat.result}`} role="dialog" aria-modal="true">
           <h2 className="display">{combat.result === 'won' ? STRINGS.combat.victory : STRINGS.combat.defeat}</h2>
           <button className="btn btn-primary" onClick={continueAfterFight} autoFocus>
-            {combat.result === 'lost'
-              ? STRINGS.awakening.wakeUp
-              : run.fightIndex + 1 < run.floorEnemies.length
-                ? STRINGS.ui.nextFight
-                : STRINGS.ui.returnToFloor}
+            {combat.result === 'lost' ? STRINGS.awakening.wakeUp : STRINGS.ui.continueGame}
           </button>
         </div>
       )}
-    </main>
+    </div>
   );
 }
 
