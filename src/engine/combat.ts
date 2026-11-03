@@ -304,7 +304,7 @@ function resolveHits(s: CombatState, actor: Combatant, target: Combatant, move: 
     let dodged: boolean;
     [dodged, s.rng] = roll(s.rng, dodgeChance(target));
     if (dodged) {
-      log(s, STRINGS.log.dodge(target.name, move.name), actor.side, { dodged: true });
+      log(s, STRINGS.log.dodge(target.name, move.name), actor.side, { dodged: true, target: target.side });
       continue;
     }
 
@@ -327,7 +327,7 @@ function resolveHits(s: CombatState, actor: Combatant, target: Combatant, move: 
     totalDamage += damage;
 
     const text = crit ? STRINGS.log.crit(actor.name, move.name, damage) : STRINGS.log.hit(actor.name, move.name, damage);
-    log(s, text, actor.side, { damage, crit });
+    log(s, text, actor.side, { damage, crit, target: target.side });
 
     reflectDamage(s, actor, target, through);
     checkResult(s);
@@ -369,7 +369,7 @@ function reflectDamage(s: CombatState, attacker: Combatant, defender: Combatant,
   const back = Math.round(hpDamage * reflect.ratio);
   if (back <= 0) return;
   attacker.hp -= back;
-  log(s, STRINGS.log.reflect(attacker.name, back), defender.side, { damage: back });
+  log(s, STRINGS.log.reflect(attacker.name, back), defender.side, { damage: back, target: attacker.side });
 }
 
 interface EffectContext {
@@ -455,7 +455,7 @@ function heal(s: CombatState, who: Combatant, amount: number): void {
   if (amount <= 0) return;
   const healed = Math.min(amount, who.maxHp - who.hp);
   who.hp += healed;
-  log(s, STRINGS.log.heal(who.name, healed), who.side);
+  log(s, STRINGS.log.heal(who.name, healed), who.side, { heal: healed, target: who.side });
 }
 
 // ---------- End of round ----------
@@ -468,7 +468,7 @@ function endOfTurn(s: CombatState): void {
       if (st.kind !== 'dot') continue;
       c.hp -= st.damage;
       st.turnsLeft -= 1;
-      log(s, STRINGS.log.dot(c.name, st.type, st.damage), c.side, { damage: st.damage });
+      log(s, STRINGS.log.dot(c.name, st.type, st.damage), c.side, { damage: st.damage, target: c.side });
     }
   }
   checkResult(s);
@@ -479,7 +479,7 @@ function endOfTurn(s: CombatState): void {
     const healed = Math.min(regen, s.enemy.maxHp - s.enemy.hp);
     if (healed > 0) {
       s.enemy.hp += healed;
-      log(s, STRINGS.log.regen(s.enemy.name, healed), 'enemy');
+      log(s, STRINGS.log.regen(s.enemy.name, healed), 'enemy', { heal: healed, target: 'enemy' });
     }
   }
 
@@ -516,7 +516,7 @@ function checkResult(s: CombatState): void {
   }
 }
 
-function log(s: CombatState, text: string, side?: Side, extra: Partial<Pick<CombatState['log'][number], 'damage' | 'crit' | 'dodged'>> = {}): void {
+function log(s: CombatState, text: string, side?: Side, extra: Partial<Pick<CombatState['log'][number], 'damage' | 'heal' | 'crit' | 'dodged' | 'target'>> = {}): void {
   s.log.push({ turn: s.turn, text, side, ...extra });
 }
 

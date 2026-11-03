@@ -165,8 +165,12 @@ export interface LogEntry {
   text: string;
   /** Who the line is about, for colouring in the UI. */
   side?: Side;
+  /** Who took the hit (or dodged it), so the UI can float the number over them. */
+  target?: Side;
   /** Damage dealt, when the line is a hit. */
   damage?: number;
+  /** HP restored, when the line is a heal. */
+  heal?: number;
   crit?: boolean;
   dodged?: boolean;
 }
