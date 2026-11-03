@@ -188,3 +188,64 @@ export interface CombatState {
   /** Which law the player used most this fight (boss comprehension bonus). */
   lawUse: Partial<Record<Law, number>>;
 }
+
+// ---------- World: regions, areas, maps ----------
+
+/** What has to be true before a region or area can be entered. */
+export type UnlockCondition =
+  | { kind: 'always' }
+  | { kind: 'areaCleared'; areaId: string }
+  | { kind: 'realm'; realm: Realm };
+
+export interface EnemyPoolEntry {
+  enemyId: string;
+  /** Relative chance of spawning. 1 for everything = uniform. */
+  weight: number;
+}
+
+export interface AreaDef {
+  id: string;
+  name: string;
+  /** 'hub': no monsters, safe. 'field': monsters wander, wins clear it. */
+  kind: 'hub' | 'field';
+  realm: Realm;
+  /** Pagoda floor number, for highest-floor tracking. Omit for non-pagoda areas. */
+  floor?: number;
+  /** Map id in src/data/maps. */
+  map: string;
+  /** Music track id from sprites.ts. */
+  music: string;
+  pool: EnemyPoolEntry[];
+  /** How many regular monsters roam the map at once. */
+  monsterCount: number;
+  /** Wins needed to clear the area and unlock the next one. */
+  winsToClear: number;
+  /** Enemy id of the boss waiting behind the gate, if any. */
+  boss?: string;
+  unlock: UnlockCondition;
+}
+
+export interface RegionDef {
+  id: string;
+  name: string;
+  description: string;
+  unlock: UnlockCondition;
+  areas: AreaDef[];
+}
+
+/** An area map: rows of legend characters (see engine/map.ts) and the tile set to draw them with. */
+export interface AreaMap {
+  id: string;
+  /** Tile set id from sprites.ts. */
+  tileset: string;
+  rows: string[];
+}
+
+/** Progress inside one area during the current run. */
+export interface AreaProgress {
+  wins: number;
+  bossDefeated: boolean;
+}
+
+/** A timed bonus that lives for the rest of the run or until it expires. */
+export type Booster = { kind: 'cultivationRate'; bonus: number; expiresAt: number };

@@ -19,6 +19,7 @@ export default function TitleScreen() {
         <button className="btn btn-primary" onClick={newGame}>{STRINGS.ui.newGame}</button>
         <button className="btn" disabled title={STRINGS.ui.noSaveYet}>{STRINGS.ui.continueGame}</button>
       </div>
+      <p className="credits muted">{STRINGS.credits}</p>
     </main>
   );
 }
