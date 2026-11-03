@@ -1,0 +1,55 @@
+/* Ink-wash on dark paper. Colours are tokens so screens can share them. */
+@import url('https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Noto+Serif:wght@400;600&display=swap');
+
+:root {
+  --paper: #121110;
+  --paper-2: #1b1917;
+  --ink: #e8e2d6;
+  --ink-soft: #a39c90;
+  --jade: #7fbf9e;
+  --crimson: #b8433b;
+  --gold: #d4a94a;
+  --fire: #d9633b;
+  --water: #4f8fc0;
+  --metal: #b8bcc4;
+  --wood: #6aa66d;
+  --earth: #c49a4a;
+  --font-display: 'Ma Shan Zheng', 'Noto Serif', serif;
+  --font-body: 'Noto Serif', Georgia, serif;
+}
+
+* { box-sizing: border-box; }
+
+html, body, #root { height: 100%; margin: 0; }
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+.title {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
+  text-align: center;
+}
+
+.title h1 {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: clamp(2.5rem, 10vw, 4.5rem);
+  margin: 0 0 8px;
+  color: var(--gold);
+}
+
+.tagline { color: var(--ink-soft); margin: 0 0 32px; }
+.note { color: var(--ink-soft); font-size: 0.9rem; max-width: 28ch; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
